@@ -1,38 +1,38 @@
-# 🌸 FlowerShop Web API (RESTful)
+# 🌸 FlowerShop Web API
 
-Một dự án Backend Web API cho hệ thống cửa hàng bán hoa trực tuyến. Dự án được xây dựng với mục tiêu rèn luyện tư duy thiết kế kiến trúc chuẩn mực, tối ưu hóa truy vấn cơ sở dữ liệu và xử lý bảo mật cho hệ thống E-commerce.
+Đây là dự án Backend API cho một hệ thống cửa hàng bán hoa trực tuyến. Em tự build project này từ đầu để luyện tập tư duy thiết kế hệ thống, tối ưu Database và xử lý các luồng mua hàng thực tế (Bảo mật, Giỏ hàng, Thanh toán).
 
-## 🚀 Công nghệ & Thư viện sử dụng
-* **Framework:** .NET 8 (C#) / ASP.NET Core Web API
-* **Database:** SQL Server & Entity Framework Core
-* **Bảo mật:** JWT (JSON Web Tokens), BCrypt.Net-Next
-* **Validation:** FluentValidation
-* **Kiến trúc:** Clean Architecture (Core - Infrastructure - API), Dependency Injection.
+## 🚀 Công nghệ sử dụng
+* **Ngôn ngữ & Framework:** C#, .NET 8, ASP.NET Core Web API
+* **Database:** SQL Server, Entity Framework Core (EF Core)
+* **Bảo mật:** JWT (JSON Web Token), BCrypt (Băm mật khẩu)
+* **Thư viện khác:** FluentValidation (Kiểm tra dữ liệu đầu vào)
+* **Kiến trúc:** Clean Architecture (Chia 3 tầng Core - Infrastructure - API), Dependency Injection.
 
-## 🔥 Các điểm nhấn kỹ thuật (Key Features & Highlights)
+## 🔥 Các điểm nhấn kỹ thuật trong dự án
 
-### 1. Kiến trúc & Thiết kế
-* Áp dụng nguyên tắc **Separation of Concerns (SoC)** và **Dependency Rule**: Tầng `Core` chứa logic nghiệp vụ thuần túy, không phụ thuộc vào EF Core hay bất kỳ thư viện ngoại lai nào (BCrypt, JWT).
-* Sử dụng **Specific Repository Pattern** thay vì Generic Repository để kiểm soát chặt chẽ từng câu lệnh SQL và tối ưu logic nghiệp vụ cho từng thực thể.
-* **Manual Mapping (Không dùng AutoMapper):** Gán DTO thủ công kết hợp với `IQueryable` (Deferred Execution) và `.Select()` (Projection). Giúp EF Core tự động sinh câu lệnh `JOIN` tối ưu dưới Database, chỉ kéo đúng những cột cần thiết lên RAM.
+### 1. Kiến trúc & Code sạch
+* **Giữ tầng Core sạch sẽ:** Tầng `Core` chỉ chứa logic nghiệp vụ thuần C#, em tuyệt đối không cài package của Entity Framework hay các thư viện ngoại lai vào đây để đảm bảo tính độc lập.
+* **Tự viết Repository (Specific):** Em tạo Repository riêng cho từng bảng thay vì xài đồ chung (Generic). Cách này giúp code rõ ràng và cực kỳ dễ custom những câu query SQL phức tạp sau này.
+* **Map DTO thủ công:** Em không lạm dụng AutoMapper. Việc map tay kết hợp với `IQueryable` giúp EF Core đủ thông minh để tự động sinh câu lệnh `JOIN` dưới Database, chỉ kéo đúng những cột cần thiết lên RAM thay vì kéo cả cục.
 
 ### 2. Tối ưu Hiệu năng (Performance)
-* **Phân trang dưới Database (Database-level Pagination):** Xử lý luồng Pagination và Search Filter hoàn toàn bằng `IQueryable` trước khi gọi `.ToListAsync()`, tránh tràn RAM (Memory Leak) khi thao tác với dữ liệu lớn.
-* Áp dụng `AsNoTracking()` cho các truy vấn Read-Only để giảm tải cho EF Core Change Tracker.
+* **Phân trang dưới Database:** Thay vì lôi cả ngàn sản phẩm lên RAM rồi mới cắt trang, em dùng `IQueryable` để ép EF Core chạy lệnh `Skip` và `Take` thẳng dưới SQL Server. Server siêu nhẹ và mượt.
+* Các API chỉ mang tính chất đọc dữ liệu (như xem danh sách hoa) đều được em gắn thêm `.AsNoTracking()` để tăng tốc độ truy xuất.
 
-### 3. Bảo mật & Xử lý người dùng
-* Băm mật khẩu một chiều (Hashing) bằng thuật toán **BCrypt** (tự động sinh Salt).
-* Cấp phát và xác thực **JWT Token**, phân quyền hệ thống cơ bản (Role-based: Admin & Customer).
-* **Bảo mật luồng Giỏ hàng:** Trích xuất an toàn `UserId` từ `Claims` của JWT Token để ngăn chặn lỗ hổng IDOR (Insecure Direct Object Reference).
+### 3. Bảo mật Hệ thống
+* Không bao giờ lưu mật khẩu gốc của khách. Tất cả được băm (hash) bằng **BCrypt** trước khi cất vào Database.
+* Đăng nhập và phân quyền (Admin / Customer) thông qua **JWT Token**.
+* **Bảo mật Giỏ hàng an toàn:** Khi khách nhét hoa vào giỏ, hệ thống tự động bóc `UserId` từ thẳng mã Token đang đăng nhập. Em tuyệt đối không nhận `UserId` từ Frontend gửi lên để chống việc hacker đổi ID tự ý mua hàng bằng tài khoản người khác.
 
-### 4. Giao dịch & Xử lý lỗi
-* **Manual Transaction trong luồng Checkout:** Sử dụng `BeginTransactionAsync` để bọc các thao tác: *Tạo Đơn -> Trừ Tồn Kho -> Xóa Giỏ Hàng*. Đảm bảo nguyên tắc ACID (All-or-Nothing), tự động Rollback nếu xảy ra lỗi thiếu tồn kho hoặc sự cố hệ thống.
-* **Global Exception Handling:** Cài đặt Middleware xử lý lỗi tập trung, chặn đứng mọi Exception không lường trước, ẩn Stack Trace và trả về JSON thống nhất cho Frontend.
-* **FluentValidation:** Chặn các request rác (Data Invalid) ngay từ cổng Controller.
+### 4. Xử lý Thanh toán (Checkout) & Bắt lỗi
+* **Giao dịch an toàn (Transaction):** Luồng đặt hàng phải trải qua 3 bước: *Tạo hóa đơn -> Trừ số lượng tồn kho -> Xóa giỏ hàng*. Em bọc cả 3 vào một `Transaction`. Nếu đang chạy mà lỗi (ví dụ kho báo hết hoa), toàn bộ hệ thống tự động `Rollback` về như cũ, tuyệt đối không bị rác dữ liệu hay mất tiền oan.
+* **Bắt lỗi tập trung (Global Exception):** Em tự viết một Middleware đánh chặn ở ngoài cùng. Nếu app có sập hay dính bug ngầm, nó sẽ chặn lại, không để lòi code lỗi ra ngoài mà chỉ trả về một câu thông báo JSON lịch sự cho Frontend.
+* Dữ liệu đầu vào (nhập giá tiền âm, bỏ trống tên...) đều bị tát văng ra ngay từ cổng Controller bằng **FluentValidation**.
 
-## 🛠️ Hướng dẫn chạy dự án
-1. Copy file `appsettings.example.json` thành `appsettings.json`
-2. Điền connection string và JWT key của bạn vào
-3. Chạy Update-Database
-4. Nhấn F5
-
+## 🛠️ Hướng dẫn cài đặt & Chạy thử
+1. Clone code về máy của bạn.
+2. Tìm file `appsettings.example.json` và đổi tên nó thành `appsettings.json`.
+3. Mở file đó ra, điền chuỗi kết nối SQL Server của bạn vào `DefaultConnection`. Ở phần `Jwt:Key`, hãy tự gõ một chuỗi mật khẩu bất kỳ dài hơn 32 ký tự.
+4. Mở Package Manager Console, chọn Default Project là `FlowerShop.Infrastructure` và chạy lệnh: `Update-Database` để tạo các bảng trong SQL.
+5. Bấm F5 để chạy app và test thử các chức năng qua giao diện Swagger.
