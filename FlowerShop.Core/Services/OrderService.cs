@@ -27,7 +27,7 @@ namespace FlowerShop.Core.Services
         {
             var cart = await _cartRepo.GetCartByUserIdAsync(userId);
             if (cart == null || !cart.CartItems.Any())
-                return "Giỏ hàng của bạn đang trống";
+                return "Giỏ hàng của bạn đang trống!";
             //begin transaction
             await _orderRepo.BeginTransactionAsync();
 

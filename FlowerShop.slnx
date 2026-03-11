@@ -2,4 +2,5 @@
   <Project Path="FlowerShop.API/FlowerShop.API.csproj" />
   <Project Path="FlowerShop.Core/FlowerShop.Core.csproj" />
   <Project Path="FlowerShop.Infrastructure/FlowerShop.Infrastructure.csproj" />
+  <Project Path="FlowerShop.Tests/FlowerShop.Tests.csproj" Id="6c058e96-4dff-4a73-934a-c2c12396c512" />
 </Solution>
